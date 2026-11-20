@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="#0c0a09"/>
+  <rect x="24" y="24" width="464" height="464" rx="104" stroke="#f97316" stroke-width="8" stroke-opacity="0.3"/>
+  <!-- Geometric Proof-of-Cultivation Emblem -->
+  <path d="M256 96L384 224L256 352L128 224Z" stroke="#f97316" stroke-width="20" stroke-linejoin="round" fill="#f97316" fill-opacity="0.15"/>
+  <path d="M256 160L320 224L256 288L192 224Z" fill="#06b6d4" fill-opacity="0.8"/>
+  <path d="M256 288V416" stroke="#f97316" stroke-width="18" stroke-linecap="round"/>
+  <path d="M192 360L256 416L320 360" stroke="#f97316" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="224" r="16" fill="#f9f9f9"/>
+</svg>

@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: #0c0a09;
+  color: #f9f9f9;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #141211;
+}
+::-webkit-scrollbar-thumb {
+  background: #262422;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #383532;
+}
+
+/* Print Stylesheet for Living Binder Integration */
+@media print {
+  /* Strip out screen-only chrome */
+  .no-print,
+  nav,
+  button,
+  .print-hide,
+  aside,
+  [role="dialog"],
+  .fixed,
+  .sticky {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #111111 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  #root {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-page-header {
+    display: block !important;
+    border-bottom: 2pt solid #cc5500;
+    margin-bottom: 24pt;
+    padding-bottom: 8pt;
+  }
+
+  .print-card {
+    page-break-inside: avoid;
+    border: 1pt solid #d1d5db !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    margin-bottom: 16pt;
+    padding: 12pt;
+    border-radius: 4pt;
+  }
+
+  .print-card-title {
+    color: #000000 !important;
+    font-weight: bold;
+    font-size: 13pt;
+  }
+
+  .print-badge {
+    border: 1pt solid #000000 !important;
+    color: #000000 !important;
+    background: none !important;
+  }
+
+  a {
+    color: #111111 !important;
+    text-decoration: underline;
+  }
+
+  @page {
+    margin: 0.75in;
+    size: portrait;
+  }
+}

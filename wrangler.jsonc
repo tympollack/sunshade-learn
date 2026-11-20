@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sunshade-learn",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "APP_ID": "sunshade-learn",
+    "APP_NAME": "Blueprint Academy",
+    "HUB_LOGIN_URL": "https://hub.sunshade.icu/login",
+    "HUB_ORIGIN": "https://hub.sunshade.icu"
+  }
+}

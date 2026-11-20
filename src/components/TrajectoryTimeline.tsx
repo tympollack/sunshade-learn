@@ -1,0 +1,84 @@
+import React from 'react';
+import { Clock, Hash, ShieldCheck } from 'lucide-react';
+import { CultivationEvent } from '../types';
+
+interface TrajectoryTimelineProps {
+  events: CultivationEvent[];
+}
+
+export const TrajectoryTimeline: React.FC<TrajectoryTimelineProps> = ({ events }) => {
+  // Sort strictly descending by seq_num for reverse-chronological trajectory
+  const sorted = [...events].sort((a, b) => b.seq_num - a.seq_num);
+
+  return (
+    <div className="bg-[#141211] border border-[#262422] rounded-xl p-5 space-y-4 shadow-sm print-card">
+      <div className="flex items-center justify-between border-b border-[#262422] pb-3">
+        <div className="flex items-center space-x-2">
+          <Clock className="w-4 h-4 text-cyanic" />
+          <h3 className="text-sm font-bold text-crisp print-card-title">
+            Longitudinal Trajectory Timeline
+          </h3>
+        </div>
+        <span className="text-[11px] font-mono text-subtle">
+          {events.length} sequenced events
+        </span>
+      </div>
+
+      {sorted.length === 0 ? (
+        <div className="py-6 text-center text-xs text-subtle font-mono">
+          No timeline events recorded yet.
+        </div>
+      ) : (
+        <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#262422]">
+          {sorted.map((ev) => {
+            const stageColor = {
+              seeded: 'text-subtle border-[#262422] bg-[#1a1816]',
+              studied: 'text-cyanic border-cyanic/40 bg-cyanic/15',
+              applied: 'text-burnt border-burnt/40 bg-burnt/15',
+              cultivated: 'text-crisp border-cyanic bg-cyanic',
+            }[ev.stage];
+
+            return (
+              <div key={ev.id} className="relative group">
+                {/* Node icon */}
+                <div
+                  className={`absolute -left-6 top-1 w-3 h-3 rounded-full border ${stageColor} transition-transform group-hover:scale-125`}
+                />
+
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#0c0a09] border border-[#262422] text-subtle">
+                      #{ev.seq_num} • {ev.stage}
+                    </span>
+                    <span className="text-xs font-semibold text-crisp truncate max-w-[200px]">
+                      {ev.attestation_kind}
+                    </span>
+                    <span className="text-[10px] text-subtle ml-auto font-mono">
+                      {new Date(ev.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {ev.synthesis_notes && (
+                    <p className="text-xs text-subtle line-clamp-2 leading-relaxed">
+                      {ev.synthesis_notes}
+                    </p>
+                  )}
+
+                  {/* Hash Chain Footprint */}
+                  <div className="flex items-center space-x-2 text-[10px] font-mono text-subtle pt-0.5">
+                    <span className="flex items-center">
+                      <Hash className="w-3 h-3 mr-0.5 text-burnt" />
+                      <span className="truncate max-w-[120px] select-all">{ev.event_hash}</span>
+                    </span>
+                    <span>←</span>
+                    <span className="truncate max-w-[100px] text-[#524e4a]">{ev.prev_event_hash}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
