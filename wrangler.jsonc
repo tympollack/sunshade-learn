@@ -15,5 +15,31 @@
     "APP_NAME": "Blueprint Academy",
     "HUB_LOGIN_URL": "https://hub.sunshade.icu/login",
     "HUB_ORIGIN": "https://hub.sunshade.icu"
+  },
+  "env": {
+    "staging": {
+      "name": "sunshade-learn-stag",
+      "routes": [
+        { "pattern": "learn-stag.sunshade.icu", "custom_domain": true }
+      ],
+      "vars": {
+        "APP_ID": "sunshade-learn",
+        "APP_NAME": "Blueprint Academy (Staging)",
+        "HUB_LOGIN_URL": "https://hub.sunshade.icu/login",
+        "HUB_ORIGIN": "https://hub.sunshade.icu"
+      }
+    },
+    "production": {
+      "name": "sunshade-learn",
+      "routes": [
+        { "pattern": "learn.sunshade.icu", "custom_domain": true }
+      ],
+      "vars": {
+        "APP_ID": "sunshade-learn",
+        "APP_NAME": "Blueprint Academy",
+        "HUB_LOGIN_URL": "https://hub.sunshade.icu/login",
+        "HUB_ORIGIN": "https://hub.sunshade.icu"
+      }
+    }
   }
 }
