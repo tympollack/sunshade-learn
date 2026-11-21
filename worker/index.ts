@@ -112,8 +112,39 @@ async function authenticateUser(request: Request, env: Env) {
 }
 
 /**
- * Creates a scoped Supabase client for authenticated user queries targeting 'learn' schema
+ * Fetches all rows from a table in pages of 1000 so exports never silently truncate
  */
+async function fetchAllOrderedRows<T>(
+  supabase: ReturnType<typeof createScopedClient>,
+  table: string,
+  orderColumn: string
+): Promise<{ data: T[]; error: { message: string } | null }> {
+  const PAGE_SIZE = 1000;
+  const allRows: T[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .order(orderColumn, { ascending: true })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) {
+      return { data: [], error };
+    }
+
+    const batch = (data || []) as T[];
+    allRows.push(...batch);
+
+    if (batch.length < PAGE_SIZE) {
+      break;
+    }
+    offset += PAGE_SIZE;
+  }
+
+  return { data: allRows, error: null };
+}
 function createScopedClient(token: string, env: Env) {
   const supabaseUrl = env.SUPABASE_URL || 'https://auth.sunshade.icu';
   const supabaseKey = env.SUPABASE_ANON_KEY || 'anon-key-placeholder';
@@ -211,17 +242,17 @@ async function handleApiRoute(request: Request, env: Env, url: URL): Promise<Res
     const format = (url.searchParams.get('format') || 'json').toLowerCase();
     const supabase = createScopedClient(token, env);
 
-    // Fetch user domains, entries, events, and verifiable credentials
+    // Fetch user domains, entries, events, and verifiable credentials with full pagination
     const [
       { data: domains, error: domErr },
       { data: entries, error: entErr },
       { data: events, error: evErr },
       { data: credentials, error: credErr },
     ] = await Promise.all([
-      supabase.from('domains').select('*').order('created_at', { ascending: true }),
-      supabase.from('entries').select('*').order('created_at', { ascending: true }),
-      supabase.from('cultivation_events').select('*').order('seq_num', { ascending: true }),
-      supabase.from('verifiable_credentials').select('*').order('created_at', { ascending: true }),
+      fetchAllOrderedRows<Domain>(supabase, 'domains', 'created_at'),
+      fetchAllOrderedRows<Entry>(supabase, 'entries', 'created_at'),
+      fetchAllOrderedRows<CultivationEvent>(supabase, 'cultivation_events', 'seq_num'),
+      fetchAllOrderedRows<VerifiableCredential>(supabase, 'verifiable_credentials', 'created_at'),
     ]);
 
     if (domErr || entErr || evErr || credErr) {

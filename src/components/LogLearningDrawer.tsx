@@ -22,6 +22,7 @@ export const LogLearningDrawer: React.FC<LogLearningDrawerProps> = ({
   
   // Custom Entry State
   const [title, setTitle] = useState('');
+  const [isTitleManuallyEdited, setIsTitleManuallyEdited] = useState(false);
   const [sourceKind, setSourceKind] = useState<SourceKind>('web_url');
   const [sourceUri, setSourceUri] = useState('');
   const [selectedDomainId, setSelectedDomainId] = useState<string>('');
@@ -80,27 +81,37 @@ export const LogLearningDrawer: React.FC<LogLearningDrawerProps> = ({
     }
   }, [domains]);
 
-  // Auto-derive human-readable title when pasting a URL if title is still blank
+  // Auto-derive human-readable title when pasting or editing a URL unless title was manually edited
+  const deriveTitleFromUrl = (rawUri: string): string | null => {
+    const trimmed = rawUri.trim();
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) return null;
+    try {
+      const parsed = new URL(trimmed);
+      const host = parsed.hostname.replace(/^www\./, '');
+      if (!host.includes('.')) return null;
+      const lastSegment = parsed.pathname
+        .split('/')
+        .filter(Boolean)
+        .pop()
+        ?.replace(/[-_]/g, ' ')
+        ?.replace(/\.[a-z0-9]+$/i, '');
+      if (lastSegment && lastSegment.length > 2) {
+        const pretty = lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
+        return `${pretty} (${host})`;
+      }
+      return `Resource from ${host}`;
+    } catch {
+      return null;
+    }
+  };
+
   const handleSourceUriChange = (nextUri: string) => {
     setSourceUri(nextUri);
-    if (!title.trim() && nextUri.trim().startsWith('http')) {
-      try {
-        const parsed = new URL(nextUri.trim());
-        const host = parsed.hostname.replace(/^www\./, '');
-        const lastSegment = parsed.pathname
-          .split('/')
-          .filter(Boolean)
-          .pop()
-          ?.replace(/[-_]/g, ' ')
-          ?.replace(/\.[a-z0-9]+$/i, '');
-        if (lastSegment && lastSegment.length > 2) {
-          const pretty = lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
-          setTitle(`${pretty} (${host})`);
-        } else {
-          setTitle(`Resource from ${host}`);
-        }
-      } catch {
-        // Ignore invalid URL while typing
+    if (!isTitleManuallyEdited || !title.trim()) {
+      const derived = deriveTitleFromUrl(nextUri);
+      if (derived) {
+        setTitle(derived);
+        setIsTitleManuallyEdited(false);
       }
     }
   };
@@ -226,6 +237,7 @@ export const LogLearningDrawer: React.FC<LogLearningDrawerProps> = ({
 
       // Reset form
       setTitle('');
+      setIsTitleManuallyEdited(false);
       setSourceUri('');
       setIsCreatingNewDomain(false);
       setNewDomainTitle('');
@@ -366,7 +378,10 @@ export const LogLearningDrawer: React.FC<LogLearningDrawerProps> = ({
                     type="text"
                     required
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      setIsTitleManuallyEdited(e.target.value.trim().length > 0);
+                    }}
                     placeholder="e.g. Distributed Consensus in Raft"
                     className="w-full px-3.5 py-2.5 bg-[#0c0a09] border border-[#262422] focus:border-burnt rounded-lg text-sm text-crisp placeholder-subtle/50 outline-none transition-colors"
                   />

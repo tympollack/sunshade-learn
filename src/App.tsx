@@ -213,7 +213,6 @@ export const App: React.FC = () => {
         isOpen={Boolean(socraticEntry)}
         onClose={() => setSocraticEntry(null)}
         onCultivated={() => {
-          setSocraticEntry(null);
           fetchLedgerData();
         }}
       />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, Hash } from 'lucide-react';
 import { CultivationEvent, Domain, Entry } from '../types';
 
@@ -15,11 +15,22 @@ export const TrajectoryTimeline: React.FC<TrajectoryTimelineProps> = ({
 }) => {
   const [selectedDomainId, setSelectedDomainId] = useState<string>('all');
 
+  // Reset domain filter if the selected domain was removed or the ledger was purged
+  useEffect(() => {
+    if (selectedDomainId !== 'all' && !domains.some((d) => d.id === selectedDomainId)) {
+      setSelectedDomainId('all');
+    }
+  }, [domains, selectedDomainId]);
+
+  const activeDomain =
+    selectedDomainId !== 'all' ? domains.find((d) => d.id === selectedDomainId) : undefined;
+  const effectiveDomainId = activeDomain ? selectedDomainId : 'all';
+
   const entryMap = new Map(entries.map((e) => [e.id, e]));
   const filteredEvents =
-    selectedDomainId === 'all'
+    effectiveDomainId === 'all'
       ? events
-      : events.filter((ev) => entryMap.get(ev.entry_id)?.domain_id === selectedDomainId);
+      : events.filter((ev) => entryMap.get(ev.entry_id)?.domain_id === effectiveDomainId);
 
   // Sort strictly descending by seq_num for reverse-chronological trajectory
   const sorted = [...filteredEvents].sort((a, b) => b.seq_num - a.seq_num);
@@ -32,6 +43,7 @@ export const TrajectoryTimeline: React.FC<TrajectoryTimelineProps> = ({
             <Clock className="w-4 h-4 text-cyanic" />
             <h3 className="text-sm font-bold text-crisp print-card-title">
               Longitudinal Trajectory Timeline
+              {activeDomain ? ` (${activeDomain.title})` : ''}
             </h3>
           </div>
           <span className="text-[11px] font-mono text-subtle">
@@ -43,7 +55,7 @@ export const TrajectoryTimeline: React.FC<TrajectoryTimelineProps> = ({
           <div className="no-print">
             <select
               aria-label="Filter trajectory by domain"
-              value={selectedDomainId}
+              value={effectiveDomainId}
               onChange={(e) => setSelectedDomainId(e.target.value)}
               className="w-full px-2.5 py-1.5 bg-[#0c0a09] border border-[#262422] focus:border-burnt rounded-lg text-xs text-crisp outline-none"
             >
@@ -93,7 +105,7 @@ export const TrajectoryTimeline: React.FC<TrajectoryTimelineProps> = ({
                   </div>
 
                   {ev.synthesis_notes && (
-                    <p className="text-xs text-subtle line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-subtle whitespace-pre-line leading-relaxed">
                       {ev.synthesis_notes}
                     </p>
                   )}
