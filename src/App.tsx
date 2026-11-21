@@ -15,14 +15,20 @@ import { MentorSignoffView } from './components/MentorSignoffView';
 import { Loader2, Plus, BookOpen } from 'lucide-react';
 
 export const App: React.FC = () => {
-  // Routing checks
+  // Routing checks (supports both /share/:token, /blueprint/share/:token, /signoff/:token, /blueprint/signoff/:token)
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
-  if (pathname.startsWith('/share/')) {
-    const token = pathname.replace('/share/', '').trim();
+  if (pathname.startsWith('/share/') || pathname.startsWith('/blueprint/share/')) {
+    const token = pathname
+      .replace(/^\/blueprint\/share\//, '')
+      .replace(/^\/share\//, '')
+      .trim();
     return <ShareView token={token} />;
   }
-  if (pathname.startsWith('/signoff/')) {
-    const token = pathname.replace('/signoff/', '').trim();
+  if (pathname.startsWith('/signoff/') || pathname.startsWith('/blueprint/signoff/')) {
+    const token = pathname
+      .replace(/^\/blueprint\/signoff\//, '')
+      .replace(/^\/signoff\//, '')
+      .trim();
     return <MentorSignoffView token={token} />;
   }
 
@@ -185,7 +191,7 @@ export const App: React.FC = () => {
 
           {/* Right Column: Longitudinal Trajectory Timeline */}
           <div className="space-y-6">
-            <TrajectoryTimeline events={events} />
+            <TrajectoryTimeline events={events} domains={domains} entries={entries} />
           </div>
 
         </div>

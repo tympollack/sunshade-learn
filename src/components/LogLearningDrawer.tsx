@@ -80,6 +80,31 @@ export const LogLearningDrawer: React.FC<LogLearningDrawerProps> = ({
     }
   }, [domains]);
 
+  // Auto-derive human-readable title when pasting a URL if title is still blank
+  const handleSourceUriChange = (nextUri: string) => {
+    setSourceUri(nextUri);
+    if (!title.trim() && nextUri.trim().startsWith('http')) {
+      try {
+        const parsed = new URL(nextUri.trim());
+        const host = parsed.hostname.replace(/^www\./, '');
+        const lastSegment = parsed.pathname
+          .split('/')
+          .filter(Boolean)
+          .pop()
+          ?.replace(/[-_]/g, ' ')
+          ?.replace(/\.[a-z0-9]+$/i, '');
+        if (lastSegment && lastSegment.length > 2) {
+          const pretty = lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
+          setTitle(`${pretty} (${host})`);
+        } else {
+          setTitle(`Resource from ${host}`);
+        }
+      } catch {
+        // Ignore invalid URL while typing
+      }
+    }
+  };
+
   // Load Seeded Credential Paths when tab switched
   useEffect(() => {
     if (tab === 'paths' && paths.length === 0) {
@@ -451,7 +476,7 @@ export const LogLearningDrawer: React.FC<LogLearningDrawerProps> = ({
                   <input
                     type="text"
                     value={sourceUri}
-                    onChange={(e) => setSourceUri(e.target.value)}
+                    onChange={(e) => handleSourceUriChange(e.target.value)}
                     placeholder="https://... or ISBN / Chapter"
                     className="w-full px-3.5 py-2.5 bg-[#0c0a09] border border-[#262422] focus:border-burnt rounded-lg text-sm text-crisp placeholder-subtle/50 outline-none transition-colors"
                   />

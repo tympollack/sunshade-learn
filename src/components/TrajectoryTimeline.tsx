@@ -1,27 +1,61 @@
-import React from 'react';
-import { Clock, Hash, ShieldCheck } from 'lucide-react';
-import { CultivationEvent } from '../types';
+import React, { useState } from 'react';
+import { Clock, Hash } from 'lucide-react';
+import { CultivationEvent, Domain, Entry } from '../types';
 
 interface TrajectoryTimelineProps {
   events: CultivationEvent[];
+  domains?: Domain[];
+  entries?: Entry[];
 }
 
-export const TrajectoryTimeline: React.FC<TrajectoryTimelineProps> = ({ events }) => {
+export const TrajectoryTimeline: React.FC<TrajectoryTimelineProps> = ({
+  events,
+  domains = [],
+  entries = [],
+}) => {
+  const [selectedDomainId, setSelectedDomainId] = useState<string>('all');
+
+  const entryMap = new Map(entries.map((e) => [e.id, e]));
+  const filteredEvents =
+    selectedDomainId === 'all'
+      ? events
+      : events.filter((ev) => entryMap.get(ev.entry_id)?.domain_id === selectedDomainId);
+
   // Sort strictly descending by seq_num for reverse-chronological trajectory
-  const sorted = [...events].sort((a, b) => b.seq_num - a.seq_num);
+  const sorted = [...filteredEvents].sort((a, b) => b.seq_num - a.seq_num);
 
   return (
     <div className="bg-[#141211] border border-[#262422] rounded-xl p-5 space-y-4 shadow-sm print-card">
-      <div className="flex items-center justify-between border-b border-[#262422] pb-3">
-        <div className="flex items-center space-x-2">
-          <Clock className="w-4 h-4 text-cyanic" />
-          <h3 className="text-sm font-bold text-crisp print-card-title">
-            Longitudinal Trajectory Timeline
-          </h3>
+      <div className="flex flex-col space-y-2.5 border-b border-[#262422] pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-cyanic" />
+            <h3 className="text-sm font-bold text-crisp print-card-title">
+              Longitudinal Trajectory Timeline
+            </h3>
+          </div>
+          <span className="text-[11px] font-mono text-subtle">
+            {filteredEvents.length} sequenced events
+          </span>
         </div>
-        <span className="text-[11px] font-mono text-subtle">
-          {events.length} sequenced events
-        </span>
+
+        {domains.length > 0 && (
+          <div className="no-print">
+            <select
+              aria-label="Filter trajectory by domain"
+              value={selectedDomainId}
+              onChange={(e) => setSelectedDomainId(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-[#0c0a09] border border-[#262422] focus:border-burnt rounded-lg text-xs text-crisp outline-none"
+            >
+              <option value="all">All Knowledge Domains ({events.length})</option>
+              {domains.map((dom) => (
+                <option key={dom.id} value={dom.id}>
+                  {dom.title} ({dom.slug})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {sorted.length === 0 ? (
