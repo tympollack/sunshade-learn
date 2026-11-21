@@ -256,9 +256,11 @@ async function handleApiRoute(request: Request, env: Env, url: URL): Promise<Res
       appName: 'Blueprint Academy',
       version: '2.0.0',
       exported_at: new Date().toISOString(),
+      chain_root_hash: chainVerification.rootHash || 'GENESIS',
       user_id: user.id,
       domains: domains || [],
       entries: entries || [],
+      cultivation_events: typedEvents,
       events: typedEvents,
       verifiable_credentials: credentials || [],
       verification: chainVerification,
@@ -480,12 +482,16 @@ function generateSocraticQuestions(entry: Entry & { domain?: Domain }): string[]
 }
 
 /**
- * Evaluates the answers in-memory and returns a concise coaching brief
+ * Evaluates the answers in-memory and returns a concise 3-line coaching brief
  */
 function evaluateEphemeralCheck(entry: Entry, answers: string[]): string {
   const totalLength = answers.reduce((acc, a) => acc + a.trim().length, 0);
   const depthLevel = totalLength > 180 ? 'exemplary technical depth' : 'solid conceptual clarity';
-  return `Cultivated with ${depthLevel}. Learner articulated core invariants of "${entry.title}", examined boundary trade-offs, and evidenced application fidelity.`;
+  return [
+    `What Landed Cleanly: Cultivated "${entry.title}" with ${depthLevel}, articulating core mechanisms and practical application.`,
+    `Fuzzy Spot to Revisit: Pressure-test edge-case failure modes under concurrent load or degraded network conditions.`,
+    `Vocabulary to Sharpen: Anchor explanations around deterministic state invariants and verifiable boundary guarantees.`,
+  ].join('\n');
 }
 
 /**

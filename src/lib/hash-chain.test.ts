@@ -211,4 +211,56 @@ describe('Proof-of-Cultivation Cryptographic Hash Chaining', () => {
     expect(result.brokenIndex).toBe(0);
     expect(result.reason).toMatch(/hash mismatch/);
   });
+
+  it('verifies a complete Digital Backpack export archive object including chain_root_hash', async () => {
+    const userId = '11111111-1111-1111-1111-111111111111';
+    const entryId = '22222222-2222-2222-2222-222222222222';
+    const t0 = 1795200000000;
+
+    const h0 = await computeEventHash({
+      seq_num: 1,
+      user_id: userId,
+      entry_id: entryId,
+      stage: 'seeded',
+      synthesis_notes: 'Backpack archive event',
+      artifact_uri: null,
+      attestation_kind: 'self_synthesis',
+      signer_did: null,
+      event_timestamp_ms: t0,
+      prev_event_hash: 'GENESIS',
+    });
+
+    const events: CultivationEvent[] = [
+      {
+        id: 'e1',
+        user_id: userId,
+        entry_id: entryId,
+        seq_num: 1,
+        stage: 'seeded',
+        synthesis_notes: 'Backpack archive event',
+        artifact_uri: null,
+        attestation_kind: 'self_synthesis',
+        payload_json: {},
+        prev_event_hash: 'GENESIS',
+        event_hash: h0,
+        signer_did: null,
+        event_timestamp_ms: t0,
+        created_at: new Date(t0).toISOString(),
+      },
+    ];
+
+    const validExport = await verifyCultivationChain({
+      cultivation_events: events,
+      chain_root_hash: h0,
+    });
+    expect(validExport.valid).toBe(true);
+    expect(validExport.rootHash).toBe(h0);
+
+    const mismatchedRoot = await verifyCultivationChain({
+      cultivation_events: events,
+      chain_root_hash: '0000000000000000000000000000000000000000000000000000000000000000',
+    });
+    expect(mismatchedRoot.valid).toBe(false);
+    expect(mismatchedRoot.reason).toMatch(/Chain root hash mismatch/);
+  });
 });

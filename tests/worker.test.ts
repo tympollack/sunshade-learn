@@ -87,6 +87,28 @@ describe('Cloudflare Worker API Routes (worker/index.ts)', () => {
     expect(response.status).toBe(401);
   });
 
+  it('supports /api/blueprint/* aliased endpoints and blocks unauthenticated calls with 401', async () => {
+    const exportReq = new Request('https://learn.sunshade.icu/api/blueprint/export?format=json', {
+      method: 'GET',
+    });
+    const exportRes = await worker.fetch(exportReq, mockEnv, mockCtx);
+    expect(exportRes.status).toBe(401);
+
+    const delReq = new Request('https://learn.sunshade.icu/api/blueprint/ledger', {
+      method: 'DELETE',
+    });
+    const delRes = await worker.fetch(delReq, mockEnv, mockCtx);
+    expect(delRes.status).toBe(401);
+
+    const checkReq = new Request('https://learn.sunshade.icu/api/blueprint/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'start', itemId: 'fake-id' }),
+    });
+    const checkRes = await worker.fetch(checkReq, mockEnv, mockCtx);
+    expect(checkRes.status).toBe(401);
+  });
+
   it('Delegates static requests to env.ASSETS with security headers', async () => {
     const request = new Request('https://learn.sunshade.icu/', {
       method: 'GET',
