@@ -112,8 +112,39 @@ async function authenticateUser(request: Request, env: Env) {
 }
 
 /**
- * Creates a scoped Supabase client for authenticated user queries targeting 'learn' schema
+ * Fetches all rows from a table in pages of 1000 so exports never silently truncate
  */
+async function fetchAllOrderedRows<T>(
+  supabase: ReturnType<typeof createScopedClient>,
+  table: string,
+  orderColumn: string
+): Promise<{ data: T[]; error: { message: string } | null }> {
+  const PAGE_SIZE = 1000;
+  const allRows: T[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .order(orderColumn, { ascending: true })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) {
+      return { data: [], error };
+    }
+
+    const batch = (data || []) as T[];
+    allRows.push(...batch);
+
+    if (batch.length < PAGE_SIZE) {
+      break;
+    }
+    offset += PAGE_SIZE;
+  }
+
+  return { data: allRows, error: null };
+}
 function createScopedClient(token: string, env: Env) {
   const supabaseUrl = env.SUPABASE_URL || 'https://auth.sunshade.icu';
   const supabaseKey = env.SUPABASE_ANON_KEY || 'anon-key-placeholder';
@@ -211,17 +242,17 @@ async function handleApiRoute(request: Request, env: Env, url: URL): Promise<Res
     const format = (url.searchParams.get('format') || 'json').toLowerCase();
     const supabase = createScopedClient(token, env);
 
-    // Fetch user domains, entries, events, and verifiable credentials
+    // Fetch user domains, entries, events, and verifiable credentials with full pagination
     const [
       { data: domains, error: domErr },
       { data: entries, error: entErr },
       { data: events, error: evErr },
       { data: credentials, error: credErr },
     ] = await Promise.all([
-      supabase.from('domains').select('*').order('created_at', { ascending: true }),
-      supabase.from('entries').select('*').order('created_at', { ascending: true }),
-      supabase.from('cultivation_events').select('*').order('seq_num', { ascending: true }),
-      supabase.from('verifiable_credentials').select('*').order('created_at', { ascending: true }),
+      fetchAllOrderedRows<Domain>(supabase, 'domains', 'created_at'),
+      fetchAllOrderedRows<Entry>(supabase, 'entries', 'created_at'),
+      fetchAllOrderedRows<CultivationEvent>(supabase, 'cultivation_events', 'seq_num'),
+      fetchAllOrderedRows<VerifiableCredential>(supabase, 'verifiable_credentials', 'created_at'),
     ]);
 
     if (domErr || entErr || evErr || credErr) {
@@ -256,9 +287,11 @@ async function handleApiRoute(request: Request, env: Env, url: URL): Promise<Res
       appName: 'Blueprint Academy',
       version: '2.0.0',
       exported_at: new Date().toISOString(),
+      chain_root_hash: chainVerification.rootHash || 'GENESIS',
       user_id: user.id,
       domains: domains || [],
       entries: entries || [],
+      cultivation_events: typedEvents,
       events: typedEvents,
       verifiable_credentials: credentials || [],
       verification: chainVerification,
@@ -480,12 +513,16 @@ function generateSocraticQuestions(entry: Entry & { domain?: Domain }): string[]
 }
 
 /**
- * Evaluates the answers in-memory and returns a concise coaching brief
+ * Evaluates the answers in-memory and returns a concise 3-line coaching brief
  */
 function evaluateEphemeralCheck(entry: Entry, answers: string[]): string {
   const totalLength = answers.reduce((acc, a) => acc + a.trim().length, 0);
   const depthLevel = totalLength > 180 ? 'exemplary technical depth' : 'solid conceptual clarity';
-  return `Cultivated with ${depthLevel}. Learner articulated core invariants of "${entry.title}", examined boundary trade-offs, and evidenced application fidelity.`;
+  return [
+    `What Landed Cleanly: Cultivated "${entry.title}" with ${depthLevel}, articulating core mechanisms and practical application.`,
+    `Fuzzy Spot to Revisit: Pressure-test edge-case failure modes under concurrent load or degraded network conditions.`,
+    `Vocabulary to Sharpen: Anchor explanations around deterministic state invariants and verifiable boundary guarantees.`,
+  ].join('\n');
 }
 
 /**

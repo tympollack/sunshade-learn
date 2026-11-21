@@ -40,6 +40,24 @@ export const DomainCard: React.FC<DomainCardProps> = ({
   const appliedCount = items.filter((i) => i.current_stage === 'applied').length;
   const cultivatedCount = items.filter((i) => i.current_stage === 'cultivated').length;
 
+  // Most recent synthesis / update date & Next Step cue
+  const mostRecentDate = items.length > 0
+    ? new Date(
+        Math.max(...items.map((i) => new Date(i.updated_at || i.created_at).getTime()))
+      ).toLocaleDateString()
+    : null;
+
+  const nextStepCue =
+    items.length === 0
+      ? 'Next Step: Seed your first learning entry in this domain'
+      : appliedCount > 0
+      ? `Next Step: Complete Conversational Check on ${appliedCount} applied ${appliedCount === 1 ? 'entry' : 'entries'}`
+      : studiedCount > 0
+      ? `Next Step: Attach applied artifact proof to ${studiedCount} studied ${studiedCount === 1 ? 'entry' : 'entries'}`
+      : seededCount > 0
+      ? `Next Step: Synthesize plain-language notes for ${seededCount} seeded ${seededCount === 1 ? 'entry' : 'entries'}`
+      : 'All entries in this domain are Cultivated';
+
   const isPrivate = domain.visibility === 'private';
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://learn.sunshade.icu';
   const shareUrl = domain.share_token ? `${origin}/share/${domain.share_token}` : '';
@@ -110,6 +128,13 @@ export const DomainCard: React.FC<DomainCardProps> = ({
                 {domain.description}
               </p>
             )}
+
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-mono text-subtle">
+              <span className="text-burnt font-semibold">{nextStepCue}</span>
+              {mostRecentDate && (
+                <span>• Latest activity: {mostRecentDate}</span>
+              )}
+            </div>
           </div>
         </div>
 

@@ -184,7 +184,7 @@ export const SocraticCheckModal: React.FC<SocraticCheckModalProps> = ({
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Post-Session Coaching Brief:</span>
                 </div>
-                <p className="text-xs text-crisp leading-relaxed">
+                <p className="text-xs text-crisp whitespace-pre-line leading-relaxed">
                   {successResult.coachingBrief}
                 </p>
               </div>

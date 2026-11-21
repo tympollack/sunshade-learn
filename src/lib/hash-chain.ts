@@ -51,15 +51,34 @@ export async function computeEventHash(params: {
   return sha256Hex(preimage);
 }
 
+export interface DigitalBackpackArchive {
+  cultivation_events?: CultivationEvent[];
+  events?: CultivationEvent[];
+  chain_root_hash?: string;
+}
+
 /**
- * Verifies the integrity of a cultivation event hash-chain.
+ * Verifies the integrity of a cultivation event hash-chain or Digital Backpack export archive.
  * Matches learn._verify_user_chain in PostgreSQL.
  */
 export async function verifyCultivationChain(
-  events: CultivationEvent[]
+  input: CultivationEvent[] | DigitalBackpackArchive
 ): Promise<ChainVerificationResult> {
   const now = new Date().toISOString();
+  const events: CultivationEvent[] = Array.isArray(input)
+    ? input
+    : input?.cultivation_events || input?.events || [];
+  const expectedRootHash = !Array.isArray(input) ? input?.chain_root_hash : undefined;
+
   if (!events || events.length === 0) {
+    if (expectedRootHash && expectedRootHash !== 'GENESIS') {
+      return {
+        valid: false,
+        totalEvents: 0,
+        verifiedAt: now,
+        reason: `Root hash mismatch on empty chain: expected GENESIS, got ${expectedRootHash}`,
+      };
+    }
     return { valid: true, totalEvents: 0, verifiedAt: now, rootHash: 'GENESIS' };
   }
 
@@ -120,6 +139,16 @@ export async function verifyCultivationChain(
     }
 
     expectedPrev = event.event_hash;
+  }
+
+  if (expectedRootHash && expectedRootHash !== expectedPrev) {
+    return {
+      valid: false,
+      totalEvents: sorted.length,
+      verifiedAt: now,
+      reason: `Chain root hash mismatch: expected ${expectedRootHash}, computed ${expectedPrev}`,
+      rootHash: expectedPrev,
+    };
   }
 
   return {
