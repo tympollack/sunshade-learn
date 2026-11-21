@@ -5,6 +5,10 @@ on:
     branches:
       - main
       - staging
+  pull_request:
+    branches:
+      - main
+      - staging
   workflow_dispatch:
     inputs:
       environment:
@@ -46,8 +50,14 @@ jobs:
       - name: Build Static Assets & Bundle
         run: npm run build
 
+      - name: Check Cloudflare Secret Configuration
+        if: github.event_name != 'pull_request' && secrets.CLOUDFLARE_API_TOKEN == ''
+        run: |
+          echo "::warning title=Missing Cloudflare API Token::CLOUDFLARE_API_TOKEN is not configured in repository secrets. Verification passed, but automated edge deployment is skipped. Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to GitHub Settings -> Secrets -> Actions to enable CI/CD deployment."
+
       - name: Deploy to Cloudflare Workers (Staging)
-        if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+        id: deploy_staging
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')) && secrets.CLOUDFLARE_API_TOKEN != ''
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -55,7 +65,8 @@ jobs:
           command: deploy --env staging
 
       - name: Deploy to Cloudflare Workers (Production)
-        if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+        id: deploy_production
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')) && secrets.CLOUDFLARE_API_TOKEN != ''
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -63,6 +74,7 @@ jobs:
           command: deploy --env production
 
       - name: Post-Deploy Smoke Test (/api/health)
+        if: steps.deploy_staging.outcome == 'success' || steps.deploy_production.outcome == 'success'
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ inputs.environment }}" = "production" ]; then
             TARGET_HOST="https://learn.sunshade.icu"
